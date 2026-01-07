@@ -5,4 +5,4 @@ When Brackeys came back and started posting videos on Godot4 I got inspired and 
 This is my first game made with Godot
 
 ## Demo
-[https://ooojtooo.itch.io/save-the-kittens]
+<https://ooojtooo.itch.io/save-the-kittens>
