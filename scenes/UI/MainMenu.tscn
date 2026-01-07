@@ -1,0 +1,558 @@
+[gd_scene load_steps=11 format=3 uid="uid://c6k5nnpbypshi"]
+
+[ext_resource type="Script" path="res://scripts/UI/MainMenu.gd" id="1_m4vvq"]
+[ext_resource type="PackedScene" uid="uid://hmx6o472ropw" path="res://scenes/UI/MasterOptionsMenuWithTabs.tscn" id="2_2ucse"]
+[ext_resource type="PackedScene" uid="uid://bkcsjsk2ciff" path="res://addons/maaacks_menus_template/base/scenes/MusicPlayers/BackgroundMusicPlayer.tscn" id="5_u3b4i"]
+[ext_resource type="Texture2D" uid="uid://cp80mxmxsxjai" path="res://assets/sprites/background (2).png" id="6_4scd2"]
+[ext_resource type="FontFile" uid="uid://m037ljq2ksyq" path="res://assets/fonts/PixelOperator8-Bold.ttf" id="7_sh67w"]
+[ext_resource type="FontFile" uid="uid://rkn5l8dkquav" path="res://assets/fonts/PixelOperator8.ttf" id="8_ravcl"]
+
+[sub_resource type="GDScript" id="GDScript_msree"]
+script/source = "@tool
+#class_name Credits
+extends Control
+
+signal end_reached
+
+@export_file(\"*.md\") var attribution_file_path: String = \"res://ATTRIBUTION.md\"
+@export var h1_font_size: int
+@export var h2_font_size: int
+@export var h3_font_size: int
+@export var h4_font_size: int
+@export var current_speed: float = 1.0
+@export var enabled : bool = true
+
+var _current_scroll_position : float = 0.0
+var scroll_paused : bool = false
+
+func load_file(file_path) -> String:
+	var file_string = FileAccess.get_file_as_string(file_path)
+	if file_string == null:
+		push_warning(\"File open error: %s\" % FileAccess.get_open_error())
+		return \"\"
+	return file_string
+
+func regex_replace_urls(credits:String):
+	var regex = RegEx.new()
+	var match_string : String = \"\\\\[([^\\\\]]*)\\\\]\\\\(([^\\\\)]*)\\\\)\"
+	var replace_string : String = \"[url=$2]$1[/url]\"
+	regex.compile(match_string)
+	return regex.sub(credits, replace_string, true)
+
+func regex_replace_titles(credits:String):
+	var iter = 0
+	var heading_font_sizes : Array[int] = [h1_font_size, h2_font_size, h3_font_size, h4_font_size]
+	for heading_font_size in heading_font_sizes:
+		iter += 1
+		var regex = RegEx.new()
+		var match_string : String = \"([^#]|^)#{%d}\\\\s([^\\n]*)\" % iter
+		var replace_string : String = \"$1[font_size=%d]$2[/font_size]\" % [heading_font_size]
+		regex.compile(match_string)
+		credits = regex.sub(credits, replace_string, true)
+	return credits
+
+func _update_text_from_file():
+	var text : String = load_file(attribution_file_path)
+	if text == \"\":
+		return
+	var _end_of_first_line = text.find(\"\\n\") + 1
+	text = text.right(-_end_of_first_line) # Trims first line \"ATTRIBUTION\"
+	text = regex_replace_urls(text)
+	text = regex_replace_titles(text)
+	%CreditsLabel.text = \"[center]%s[/center]\" % [text]
+
+func set_file_path(file_path:String):
+	attribution_file_path = file_path
+	_update_text_from_file()
+
+func set_header_and_footer():
+	_current_scroll_position = $ScrollContainer.scroll_vertical
+	%HeaderSpace.custom_minimum_size.y = size.y
+	%FooterSpace.custom_minimum_size.y = size.y
+	%CreditsLabel.custom_minimum_size.x = size.x
+
+func reset():
+	scroll_paused = false
+	$ScrollContainer.scroll_vertical = 0
+	set_header_and_footer()
+
+func _ready():
+	set_file_path(attribution_file_path)
+	set_header_and_footer()
+
+func _end_reached():
+	scroll_paused = true
+	emit_signal(\"end_reached\")
+
+func _check_end_reached():
+	var _end_of_credits_vertical = %CreditsLabel.size.y + %HeaderSpace.size.y
+	if $ScrollContainer.scroll_vertical <= _end_of_credits_vertical:
+		return
+	_end_reached()
+
+func _scroll_container(amount : float) -> void:
+	if not visible or not enabled or scroll_paused:
+		return
+	_current_scroll_position += amount
+	$ScrollContainer.scroll_vertical = round(_current_scroll_position)
+	_check_end_reached()
+
+func _process(_delta):
+	if Engine.is_editor_hint():
+		return
+	var input_axis = Input.get_axis(\"ui_up\", \"ui_down\")
+	if input_axis != 0:
+		_scroll_container(10 * input_axis)
+	else:
+		_scroll_container(current_speed)
+
+func _on_scroll_container_gui_input(event):
+	# Capture the mouse scroll wheel input event
+	if event is InputEventMouseButton:
+		scroll_paused = true
+		_start_scroll_timer()
+
+func _on_scroll_container_scroll_started():
+	# Capture the touch input event
+	scroll_paused = true
+	_start_scroll_timer()
+
+func _start_scroll_timer():
+	$ScrollResetTimer.start()
+
+func _on_CreditsLabel_meta_clicked(meta:String):
+	if meta.begins_with(\"https://\"):
+		var _err = OS.shell_open(meta)
+
+func _on_scroll_reset_timer_timeout():
+	set_header_and_footer()
+	scroll_paused = false
+"
+
+[sub_resource type="PackedScene" id="PackedScene_xqe5p"]
+_bundled = {
+"conn_count": 5,
+"conns": PackedInt32Array(1073741831, 1073741830, 51, 50, 2, 0, 0, 1073741833, 1073741832, 53, 52, 2, 0, 0, 1073741835, 1073741834, 55, 54, 2, 0, 0, 1073741837, 1073741836, 57, 56, 2, 0, 0, 1073741839, 1073741838, 59, 58, 2, 0, 0),
+"editable_instances": [],
+"names": PackedStringArray("Credits", "Control", "layout_mode", "anchors_preset", "anchor_right", "anchor_bottom", "grow_horizontal", "grow_vertical", "script", "attribution_file_path", "h1_font_size", "h2_font_size", "h3_font_size", "h4_font_size", "ScrollContainer", "ScrollContainer", "layout_mode", "anchor_right", "anchor_bottom", "scroll_vertical", "horizontal_scroll_mode", "vertical_scroll_mode", "VBoxContainer", "VBoxContainer", "layout_mode", "size_flags_horizontal", "HeaderSpace", "Control", "unique_name_in_owner", "custom_minimum_size", "layout_mode", "CreditsLabel", "RichTextLabel", "unique_name_in_owner", "custom_minimum_size", "layout_mode", "size_flags_horizontal", "size_flags_vertical", "bbcode_enabled", "fit_content", "scroll_active", "FooterSpace", "Control", "unique_name_in_owner", "custom_minimum_size", "layout_mode", "ScrollResetTimer", "Timer", "wait_time", "one_shot", "_on_scroll_container_gui_input", "gui_input", "_on_ScrollContainer_scroll_ended", "scroll_ended", "_on_scroll_container_scroll_started", "scroll_started", "_on_CreditsLabel_meta_clicked", "meta_clicked", "_on_scroll_reset_timer_timeout", "timeout"),
+"node_count": 7,
+"node_paths": [NodePath("."), NodePath("./ScrollContainer"), NodePath("./ScrollContainer/VBoxContainer"), NodePath("./ScrollContainer/VBoxContainer"), NodePath("./ScrollContainer/VBoxContainer"), NodePath("."), NodePath("."), NodePath("ScrollContainer"), NodePath("."), NodePath("ScrollContainer"), NodePath("."), NodePath("ScrollContainer"), NodePath("."), NodePath("ScrollContainer/VBoxContainer/CreditsLabel"), NodePath("."), NodePath("ScrollResetTimer")],
+"nodes": PackedInt32Array(-1, -1, 1, 0, -1, 12, 2, 0, 3, 1, 4, 2, 5, 3, 6, 4, 7, 5, 8, 6, 9, 7, 10, 8, 11, 9, 12, 10, 13, 11, 0, 1073741824, 0, 15, 14, -1, 6, 16, 12, 17, 13, 18, 14, 19, 15, 20, 16, 21, 17, 0, 1073741825, 0, 23, 22, -1, 2, 24, 18, 25, 19, 0, 1073741826, 0, 27, 26, -1, 3, 28, 20, 29, 21, 30, 22, 0, 1073741827, 0, 32, 31, -1, 8, 33, 23, 34, 24, 35, 25, 36, 26, 37, 27, 38, 28, 39, 29, 40, 30, 0, 1073741828, 0, 42, 41, -1, 3, 43, 31, 44, 32, 45, 33, 0, 1073741829, 0, 47, 46, -1, 2, 48, 34, 49, 35, 0),
+"variants": [3, 15, 1.0, 1.0, 2, 2, SubResource("GDScript_msree"), "", 64, 48, 32, 24, 0, 1.0, 1.0, 100, 0, 3, 2, 3, true, Vector2(0, 720), 2, true, Vector2(1280, 0), 2, 3, 5, true, true, false, true, Vector2(0, 720), 2, 1.5, true],
+"version": 3
+}
+
+[sub_resource type="GDScript" id="GDScript_pnbqo"]
+script/source = "#class_name UISoundController
+extends Node
+## Controller for managing all UI sounds in a scene from one place.
+##
+## This node manages all of the UI sounds under the provided node path.
+## When attached just below the root node of a scene tree, it will manage
+## all of the UI sounds in that scene.
+
+const MAX_DEPTH = 16
+
+@export var root_path : NodePath = ^\"..\"
+@export var audio_bus : StringName = &\"SFX\"
+## Continually check any new nodes added to the scene tree.
+@export var persistent : bool = true :
+	set(value):
+		persistent = value
+		_update_persistent_signals()
+
+@export_group(\"Button Sounds\")
+@export var button_hovered : AudioStream
+@export var button_focused : AudioStream
+@export var button_pressed : AudioStream
+
+@export_group(\"TabBar Sounds\")
+@export var tab_hovered : AudioStream
+@export var tab_changed : AudioStream
+@export var tab_selected : AudioStream
+
+@export_group(\"Slider Sounds\")
+@export var slider_hovered : AudioStream
+@export var slider_focused : AudioStream
+@export var slider_drag_started : AudioStream
+@export var slider_drag_ended : AudioStream
+
+@export_group(\"LineEdit Sounds\")
+@export var line_hovered : AudioStream
+@export var line_focused : AudioStream
+@export var line_text_changed : AudioStream
+@export var line_text_submitted : AudioStream
+@export var line_text_change_rejected : AudioStream
+
+@onready var root_node : Node = get_node(root_path)
+
+var button_hovered_player : AudioStreamPlayer
+var button_focused_player : AudioStreamPlayer
+var button_pressed_player : AudioStreamPlayer
+
+var tab_hovered_player : AudioStreamPlayer
+var tab_changed_player : AudioStreamPlayer
+var tab_selected_player : AudioStreamPlayer
+
+var slider_hovered_player : AudioStreamPlayer
+var slider_focused_player : AudioStreamPlayer
+var slider_drag_started_player : AudioStreamPlayer
+var slider_drag_ended_player : AudioStreamPlayer
+
+var line_hovered_player : AudioStreamPlayer
+var line_focused_player : AudioStreamPlayer
+var line_text_changed_player : AudioStreamPlayer
+var line_text_submitted_player : AudioStreamPlayer
+var line_text_change_rejected_player : AudioStreamPlayer
+
+func _update_persistent_signals():
+	if not is_inside_tree():
+		return
+	var tree_node = get_tree()
+	if persistent:
+		if not tree_node.node_added.is_connected(connect_ui_sounds):
+			tree_node.node_added.connect(connect_ui_sounds)
+	else:
+		if tree_node.node_added.is_connected(connect_ui_sounds):
+			tree_node.node_added.disconnect(connect_ui_sounds)
+
+func _build_stream_player(stream : AudioStream, stream_name : String = \"\"):
+	var stream_player : AudioStreamPlayer
+	if stream != null:
+		stream_player = AudioStreamPlayer.new()
+		stream_player.stream = stream
+		stream_player.bus = audio_bus
+		stream_player.name = stream_name + \"AudioStreamPlayer\"
+		add_child(stream_player)
+	return stream_player
+
+func _build_button_stream_players():
+	button_hovered_player = _build_stream_player(button_hovered, \"ButtonHovered\")
+	button_focused_player = _build_stream_player(button_focused, \"ButtonFocused\")
+	button_pressed_player = _build_stream_player(button_pressed, \"ButtonClicked\")
+
+func _build_tab_stream_players():
+	tab_hovered_player = _build_stream_player(tab_hovered, \"TabHovered\")
+	tab_changed_player = _build_stream_player(tab_changed, \"TabChanged\")
+	tab_selected_player = _build_stream_player(tab_selected, \"TabSelected\")
+
+func _build_slider_stream_players():
+	slider_hovered_player = _build_stream_player(slider_hovered, \"SliderHovered\")
+	slider_focused_player = _build_stream_player(slider_focused, \"SliderFocused\")
+	slider_drag_started_player = _build_stream_player(slider_drag_started, \"SliderDragStarted\")
+	slider_drag_ended_player = _build_stream_player(slider_drag_ended, \"SliderDragEnded\")
+
+func _build_line_stream_players():
+	line_hovered_player = _build_stream_player(line_hovered, \"LineHovered\")
+	line_focused_player = _build_stream_player(line_focused, \"LineFocused\")
+	line_text_changed_player = _build_stream_player(line_text_changed, \"LineTextChanged\")
+	line_text_submitted_player = _build_stream_player(line_text_submitted, \"LineTextSubmitted\")
+	line_text_change_rejected_player = _build_stream_player(line_text_change_rejected, \"LineTextChangeRejected\")
+
+func _build_all_stream_players():
+	_build_button_stream_players()
+	_build_tab_stream_players()
+	_build_slider_stream_players()
+	_build_line_stream_players()
+
+func _play_stream(stream_player : AudioStreamPlayer):
+	if not stream_player.is_inside_tree():
+		return
+	stream_player.play()
+
+func _tab_event_play_stream(_tab_idx : int, stream_player : AudioStreamPlayer):
+	_play_stream(stream_player)
+
+func _slider_drag_ended_play_stream(_value_changed : bool, stream_player : AudioStreamPlayer):
+	_play_stream(stream_player)
+
+func _line_event_play_stream(_new_text : String, stream_player : AudioStreamPlayer):
+	_play_stream(stream_player)
+
+func _connect_stream_player(node : Node, stream_player : AudioStreamPlayer, signal_name : StringName, callable : Callable) -> void:
+	if stream_player != null and not node.is_connected(signal_name, callable.bind(stream_player)):
+		node.connect(signal_name, callable.bind(stream_player))
+
+func connect_ui_sounds(node: Node) -> void:
+	if node is Button:
+		_connect_stream_player(node, button_hovered_player, &\"mouse_entered\", _play_stream)
+		_connect_stream_player(node, button_focused_player, &\"focus_entered\", _play_stream)
+		_connect_stream_player(node, button_pressed_player, &\"pressed\", _play_stream)
+	elif node is TabBar:
+		_connect_stream_player(node, tab_hovered_player, &\"tab_hovered\", _tab_event_play_stream)
+		_connect_stream_player(node, tab_changed_player, &\"tab_changed\", _tab_event_play_stream)
+		_connect_stream_player(node, tab_selected_player, &\"tab_selected\", _tab_event_play_stream)
+	elif node is Slider:
+		_connect_stream_player(node, slider_hovered_player, &\"mouse_entered\", _play_stream)
+		_connect_stream_player(node, slider_focused_player, &\"focus_entered\", _play_stream)
+		_connect_stream_player(node, slider_drag_started_player, &\"drag_started\", _play_stream)
+		_connect_stream_player(node, slider_drag_ended_player, &\"drag_ended\", _slider_drag_ended_play_stream)
+	elif node is LineEdit:
+		_connect_stream_player(node, line_hovered_player, &\"mouse_entered\", _play_stream)
+		_connect_stream_player(node, line_focused_player, &\"focus_entered\", _play_stream)
+		_connect_stream_player(node, line_text_changed_player, &\"text_changed\", _line_event_play_stream)
+		_connect_stream_player(node, line_text_submitted_player, &\"text_submitted\", _line_event_play_stream)
+		_connect_stream_player(node, line_text_change_rejected_player, &\"text_change_rejected\", _line_event_play_stream)
+
+func _recursive_connect_ui_sounds(current_node: Node, current_depth : int = 0) -> void:
+	if current_depth >= MAX_DEPTH:
+		return
+	for node in current_node.get_children():
+		connect_ui_sounds(node)
+		_recursive_connect_ui_sounds(node, current_depth + 1)
+
+func _ready() -> void:
+	_build_all_stream_players()
+	_recursive_connect_ui_sounds(root_node)
+	persistent = persistent
+
+func _exit_tree():
+	var tree_node = get_tree()
+	if tree_node.node_added.is_connected(connect_ui_sounds):
+		tree_node.node_added.disconnect(connect_ui_sounds)
+"
+
+[sub_resource type="GDScript" id="GDScript_sn7u5"]
+script/source = "#class_name CaptureFocus
+extends Container
+## Node that captures UI focus for joypad users.
+##
+## This script assists with capturing UI focus for joypad users when
+## opening, closing, or switching between menus.
+## When attached to a node, it will check if it was changed to visible
+## and a joypad is being used. If both are true, it will capture focus
+## on the first eligible node in its scene tree.
+
+## Hierarchical depth to search in the scene tree.
+@export var search_depth : int = 1
+@export var lock : bool = false :
+	set(value):
+		lock = value
+		if not lock:
+			update_focus()
+
+func _focus_first_search(control_node : Control, levels : int = 1):
+	if control_node == null or !control_node.is_visible_in_tree():
+		return false
+	if control_node.focus_mode == FOCUS_ALL:
+		control_node.grab_focus()
+		return true
+	if levels < 1:
+		return false
+	var children = control_node.get_children()
+	for child in children:
+		if _focus_first_search(child, levels - 1):
+			return true
+
+func focus_first():
+	_focus_first_search(self, search_depth)
+
+func update_focus():
+	if lock : return
+	if _is_visible_and_joypad():
+		focus_first()
+
+func _is_visible_and_joypad():
+	return is_visible_in_tree() and Input.get_connected_joypads().size() > 0
+
+func _on_visibility_changed():
+	call_deferred(\"update_focus\")
+
+func _ready():
+	if is_inside_tree():
+		update_focus()
+		connect(\"visibility_changed\", _on_visibility_changed)
+
+
+func _on_back_button_pressed():
+	pass # Replace with function body.
+"
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_m4vvq")
+options_packed_scene = ExtResource("2_2ucse")
+credits_packed_scene = SubResource("PackedScene_xqe5p")
+
+[node name="UISoundController" type="Node" parent="."]
+script = SubResource("GDScript_pnbqo")
+
+[node name="BackgroundMusicPlayer" parent="." instance=ExtResource("5_u3b4i")]
+bus = &"Master"
+
+[node name="BackgroundTextureRect" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -193.0
+offset_top = -129.0
+offset_right = 201.0
+offset_bottom = 103.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("6_4scd2")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="VersionNameLabel" type="Label" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -96.0
+offset_top = -33.0
+offset_right = -8.0
+offset_bottom = -7.0
+grow_horizontal = 0
+grow_vertical = 0
+horizontal_alignment = 2
+
+[node name="MenuContainer" type="MarginContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MenuContainer"]
+layout_mode = 2
+
+[node name="TitlesMargin" type="MarginContainer" parent="MenuContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_top = 16
+
+[node name="TitlesContainer" type="VBoxContainer" parent="MenuContainer/VBoxContainer/TitlesMargin"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MenuContainer/VBoxContainer/TitlesMargin/TitlesContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("7_sh67w")
+theme_override_font_sizes/font_size = 48
+text = "Cat Platformer"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SubTitle" type="Label" parent="MenuContainer/VBoxContainer/TitlesMargin/TitlesContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_ravcl")
+theme_override_font_sizes/font_size = 24
+text = "Main Menu"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MenuMargin" type="MarginContainer" parent="MenuContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="MenuButtons" type="VBoxContainer" parent="MenuContainer/VBoxContainer/MenuMargin"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 16
+alignment = 1
+script = SubResource("GDScript_sn7u5")
+
+[node name="PlayButton" type="Button" parent="MenuContainer/VBoxContainer/MenuMargin/MenuButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(128, 40)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_ravcl")
+text = "Play"
+
+[node name="Level Select" type="Button" parent="MenuContainer/VBoxContainer/MenuMargin/MenuButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(128, 40)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_ravcl")
+text = "Level Select"
+
+[node name="OptionsButton" type="Button" parent="MenuContainer/VBoxContainer/MenuMargin/MenuButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(128, 40)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_ravcl")
+text = "Options
+"
+
+[node name="CreditsButton" type="Button" parent="MenuContainer/VBoxContainer/MenuMargin/MenuButtons"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(128, 40)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_ravcl")
+text = "Credits"
+
+[node name="ExitButton" type="Button" parent="MenuContainer/VBoxContainer/MenuMargin/MenuButtons"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(128, 40)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("8_ravcl")
+text = "Exit"
+
+[node name="OptionsContainer" type="MarginContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="CreditsContainer" type="MarginContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 32
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 32
+
+[node name="FlowControlContainer" type="MarginContainer" parent="."]
+layout_mode = 0
+anchor_right = 1.0
+anchor_bottom = 1.0
+mouse_filter = 2
+theme_override_constants/margin_left = 16
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_right = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="FlowControl" type="Control" parent="FlowControlContainer"]
+layout_mode = 2
+mouse_filter = 2
+
+[node name="BackButton" type="Button" parent="FlowControlContainer/FlowControl"]
+unique_name_in_owner = true
+visible = false
+custom_minimum_size = Vector2(62, 40)
+layout_mode = 1
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_top = -40.0
+offset_right = 62.0
+grow_vertical = 0
+text = "Back"
+
+[connection signal="pressed" from="MenuContainer/VBoxContainer/MenuMargin/MenuButtons/PlayButton" to="." method="_on_play_button_pressed"]
+[connection signal="pressed" from="MenuContainer/VBoxContainer/MenuMargin/MenuButtons/Level Select" to="." method="_on_level_select_pressed"]
+[connection signal="pressed" from="MenuContainer/VBoxContainer/MenuMargin/MenuButtons/OptionsButton" to="." method="_on_options_button_pressed"]
+[connection signal="pressed" from="MenuContainer/VBoxContainer/MenuMargin/MenuButtons/CreditsButton" to="." method="_on_credits_button_pressed"]
+[connection signal="pressed" from="MenuContainer/VBoxContainer/MenuMargin/MenuButtons/ExitButton" to="." method="_on_exit_button_pressed"]
+[connection signal="pressed" from="FlowControlContainer/FlowControl/BackButton" to="." method="_on_back_button_pressed"]

@@ -1,0 +1,10 @@
+[gd_scene load_steps=3 format=3 uid="uid://704kr0vg42cr"]
+
+[ext_resource type="Script" path="res://scripts/dash_sprite.gd" id="1_h5732"]
+[ext_resource type="Texture2D" uid="uid://b7gf6oykf41bo" path="res://assets/sprites/cat_dash.png" id="1_uajnd"]
+
+[node name="dash_sprite" type="Sprite2D"]
+z_index = -1
+position = Vector2(0, -16)
+texture = ExtResource("1_uajnd")
+script = ExtResource("1_h5732")

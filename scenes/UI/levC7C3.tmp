@@ -1,0 +1,185 @@
+[gd_scene load_steps=6 format=3 uid="uid://dr5u7a8uovkk2"]
+
+[ext_resource type="Texture2D" uid="uid://cp80mxmxsxjai" path="res://assets/sprites/background (2).png" id="1_a2ivk"]
+[ext_resource type="Script" path="res://scripts/UI/levelSelect.gd" id="1_gcunb"]
+[ext_resource type="FontFile" uid="uid://m037ljq2ksyq" path="res://assets/fonts/PixelOperator8-Bold.ttf" id="2_8r2tk"]
+[ext_resource type="FontFile" uid="uid://rkn5l8dkquav" path="res://assets/fonts/PixelOperator8.ttf" id="3_0y5w0"]
+
+[sub_resource type="GDScript" id="GDScript_sn7u5"]
+script/source = "#class_name CaptureFocus
+extends Container
+## Node that captures UI focus for joypad users.
+##
+## This script assists with capturing UI focus for joypad users when
+## opening, closing, or switching between menus.
+## When attached to a node, it will check if it was changed to visible
+## and a joypad is being used. If both are true, it will capture focus
+## on the first eligible node in its scene tree.
+
+## Hierarchical depth to search in the scene tree.
+@export var search_depth : int = 1
+@export var lock : bool = false :
+	set(value):
+		lock = value
+		if not lock:
+			update_focus()
+
+func _focus_first_search(control_node : Control, levels : int = 1):
+	if control_node == null or !control_node.is_visible_in_tree():
+		return false
+	if control_node.focus_mode == FOCUS_ALL:
+		control_node.grab_focus()
+		return true
+	if levels < 1:
+		return false
+	var children = control_node.get_children()
+	for child in children:
+		if _focus_first_search(child, levels - 1):
+			return true
+
+func focus_first():
+	_focus_first_search(self, search_depth)
+
+func update_focus():
+	if lock : return
+	if _is_visible_and_joypad():
+		focus_first()
+
+func _is_visible_and_joypad():
+	return is_visible_in_tree() and Input.get_connected_joypads().size() > 0
+
+func _on_visibility_changed():
+	call_deferred(\"update_focus\")
+
+func _ready():
+	if is_inside_tree():
+		update_focus()
+		connect(\"visibility_changed\", _on_visibility_changed)
+
+
+func _on_back_button_pressed():
+	pass # Replace with function body.
+"
+
+[node name="LevelSelect" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_gcunb")
+
+[node name="BackgroundTextureRect" type="TextureRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -193.0
+offset_top = -129.0
+offset_right = 201.0
+offset_bottom = 103.0
+grow_horizontal = 2
+grow_vertical = 2
+texture = ExtResource("1_a2ivk")
+expand_mode = 1
+stretch_mode = 5
+
+[node name="MenuContainer" type="MarginContainer" parent="."]
+unique_name_in_owner = true
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="MenuContainer"]
+layout_mode = 2
+
+[node name="TitlesMargin" type="MarginContainer" parent="MenuContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_constants/margin_top = 16
+
+[node name="TitlesContainer" type="VBoxContainer" parent="MenuContainer/VBoxContainer/TitlesMargin"]
+layout_mode = 2
+
+[node name="Title" type="Label" parent="MenuContainer/VBoxContainer/TitlesMargin/TitlesContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("2_8r2tk")
+theme_override_font_sizes/font_size = 48
+text = "Cat Platformer"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="SubTitle" type="Label" parent="MenuContainer/VBoxContainer/TitlesMargin/TitlesContainer"]
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_0y5w0")
+theme_override_font_sizes/font_size = 24
+text = "Level Select"
+horizontal_alignment = 1
+vertical_alignment = 1
+
+[node name="MenuMargin" type="MarginContainer" parent="MenuContainer/VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+theme_override_constants/margin_top = 16
+theme_override_constants/margin_bottom = 16
+
+[node name="MenuButtons" type="VBoxContainer" parent="MenuContainer/VBoxContainer/MenuMargin"]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(200, 0)
+layout_mode = 2
+size_flags_horizontal = 4
+theme_override_constants/separation = 16
+alignment = 1
+script = SubResource("GDScript_sn7u5")
+
+[node name="Level1" type="Button" parent="MenuContainer/VBoxContainer/MenuMargin/MenuButtons"]
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_0y5w0")
+text = "Level 1"
+
+[node name="Level2" type="Button" parent="MenuContainer/VBoxContainer/MenuMargin/MenuButtons"]
+visible = false
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_0y5w0")
+text = "Level 2"
+
+[node name="Level3" type="Button" parent="MenuContainer/VBoxContainer/MenuMargin/MenuButtons"]
+visible = false
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_0y5w0")
+text = "Level 3"
+
+[node name="Level4" type="Button" parent="MenuContainer/VBoxContainer/MenuMargin/MenuButtons"]
+visible = false
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_0y5w0")
+text = "Level 4"
+
+[node name="Level5" type="Button" parent="MenuContainer/VBoxContainer/MenuMargin/MenuButtons"]
+visible = false
+custom_minimum_size = Vector2(0, 50)
+layout_mode = 2
+theme_override_fonts/font = ExtResource("3_0y5w0")
+text = "Level 5"
+
+[node name="BackButton" type="Button" parent="."]
+unique_name_in_owner = true
+custom_minimum_size = Vector2(62, 40)
+layout_mode = 2
+offset_left = 18.0
+offset_top = 592.0
+offset_right = 101.0
+offset_bottom = 632.0
+grow_vertical = 0
+theme_override_fonts/font = ExtResource("3_0y5w0")
+text = "Back"
+
+[connection signal="pressed" from="MenuContainer/VBoxContainer/MenuMargin/MenuButtons/Level1" to="." method="_on_level_1_pressed"]
+[connection signal="pressed" from="BackButton" to="." method="_on_back_button_pressed"]

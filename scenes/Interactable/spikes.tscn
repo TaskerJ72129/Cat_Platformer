@@ -1,0 +1,29 @@
+[gd_scene load_steps=3 format=3 uid="uid://c0roe3bg21jox"]
+
+[ext_resource type="Script" path="res://scripts/spikes.gd" id="1_epx5x"]
+[ext_resource type="Texture2D" uid="uid://c4flc6jw875jh" path="res://assets/sprites/Spikes/Spikes.png" id="2_0sxot"]
+
+[node name="Spikes" type="Node2D"]
+script = ExtResource("1_epx5x")
+
+[node name="Sprite2D" type="Sprite2D" parent="."]
+texture = ExtResource("2_0sxot")
+region_enabled = true
+region_rect = Rect2(16, 16, 16, 16)
+
+[node name="Area2D" type="Area2D" parent="."]
+monitorable = false
+
+[node name="CollisionPolygon2D" type="CollisionPolygon2D" parent="Area2D"]
+position = Vector2(8, -21)
+scale = Vector2(0.521, 1)
+build_mode = 1
+polygon = PackedVector2Array(-26.8714, 29, -5.75816, 29, -5.75816, 23, -1.91939, 21, -1.91939, 19, -7.67754, 14, -9.59693, 14, -15.3551, 19, -15.3551, 21, -17.2745, 21, -23.0326, 16, -24.952, 16, -30.7102, 21, -26.8714, 26)
+
+[node name="Timer" type="Timer" parent="."]
+process_callback = 0
+wait_time = 0.5
+one_shot = true
+
+[connection signal="area_entered" from="Area2D" to="." method="_on_area_2d_area_entered"]
+[connection signal="timeout" from="Timer" to="." method="_on_timer_timeout"]
