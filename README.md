@@ -1,1 +1,1 @@
-This is my first Godot Game
+This is a celeste inspired platformer made in Godot v4.2.2
